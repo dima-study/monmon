@@ -57,6 +57,12 @@ func InitCoordinators(ctx context.Context, logger *logger.Logger, accuracy int) 
 	}
 }
 
+// Grower инерфейс для увеличения размера агрегатора.
+type Grower interface {
+	// Grow увеличивает размер агрегатора до n
+	Grow(n int)
+}
+
 // Schedule планирует чтение статистики по всем провайдерам каждые every за период period.
 // Возвращает канал, откуда могут быть прочитаны очередные доступные данные статистики,
 // готовые для отправки gRPC клиенту.
@@ -68,12 +74,14 @@ func Schedule(ctx context.Context, every time.Duration, period time.Duration) <-
 	for i := range len(coordinators) {
 		crd := coordinators[i]
 
-		crd.agg.Grow(int(period / time.Second))
-		ch := crd.c.Schedule(ctx, every, period)
+		if agg, ok := crd.agg.(Grower); ok {
+			agg.Grow(int(period / time.Second))
+		}
 
 		go func() {
 			defer wg.Done()
 
+			ch := crd.c.Schedule(ctx, every, period)
 			for v := range ch {
 				if rec := crd.valueToProtoRecordFn(v); rec != nil {
 					outCh <- rec

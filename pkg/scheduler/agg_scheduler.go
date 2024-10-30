@@ -16,9 +16,6 @@ type Aggregator interface {
 	// Get получает усреднённые агрегированные данные за период period
 	Get(period time.Duration) (any, bool)
 
-	// Grow увеличивает размер агрегатора до n
-	Grow(n int)
-
 	String() string
 }
 
