@@ -4,6 +4,7 @@ package register
 import (
 	"slices"
 
+	v1 "github.com/dima-study/monmon/pkg/api/proto/stats/v1"
 	"github.com/dima-study/monmon/pkg/scheduler"
 	"github.com/dima-study/monmon/pkg/stats"
 )
@@ -16,6 +17,12 @@ type DataProvider interface {
 
 	// ID - идентификатор продайдера
 	ID() string
+
+	// ValueToProtoRecord преобразует данные провайдера в соответствующей тип gRPC message.
+	ValueToProtoRecord(val any) *v1.Record
+
+	// ToProtoProvider преобразует информацию о провайдере в соответствующей тип gRPC message.
+	ToProtoProvider() *v1.Provider
 }
 
 // AggregatorMaker - функция/обёртка для создания агрегатора планировщика.
