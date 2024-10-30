@@ -84,6 +84,8 @@ func NewAggScheduler(logger *logger.Logger, name string, ch <-chan any, agg Aggr
 // а сами каналы будут закрыты.
 //
 // Завершить определённое запланированное чтение возможно через отмену контекста ctx.
+//
+// В случае, когда данные не могут быть записаны в канал - они будут утеряны.
 func (s *AggScheduler) Schedule(ctx context.Context, every time.Duration, period time.Duration) <-chan any {
 	ch := make(chan any)
 
