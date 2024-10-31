@@ -24,7 +24,7 @@ type Coordinator struct {
 var coordinators = []Coordinator{}
 
 // InitCoordinators инициализирует поддерживаемые и доступные для использования координаторы планировщика.
-// Провайдер будет запущен с точностью accuracy.
+// Провайдеры будут запущены с точностью accuracy.
 func InitCoordinators(ctx context.Context, logger *logger.Logger, accuracy int) {
 	statsList := register.SupportedStats()
 
@@ -64,8 +64,8 @@ type Grower interface {
 }
 
 // Schedule планирует чтение статистики по всем провайдерам каждые every за период period.
-// Возвращает канал, откуда могут быть прочитаны очередные доступные данные статистики,
-// готовые для отправки gRPC клиенту.
+// Возвращает буферезированный канал (длиной равной количеству запущеных провайдеров),
+// откуда могут быть прочитаны очередные доступные данные статистики, готовые для отправки gRPC клиенту.
 func Schedule(ctx context.Context, every time.Duration, period time.Duration) <-chan *v1.Record {
 	outCh := make(chan *v1.Record, len(coordinators))
 	wg := sync.WaitGroup{}
