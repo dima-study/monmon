@@ -33,14 +33,8 @@ message GetStatsRequest {
   int64 period = 2;
 }
 
-// GetStatsResponse ответ с данными статистики или возникшей ошибкой.
+// GetStatsResponse ответ с данными статистики.
 message GetStatsResponse {
-  // Body данные или ошибка.
-  oneof body {
-    // Record данные статистики.
-    Record record = 1;
-
-    // Error возникшая ошибка (наприме, ошибка валидации запроса).
-    string error = 2;
-  }
+  // Record данные статистики.
+  Record record = 1;
 }
