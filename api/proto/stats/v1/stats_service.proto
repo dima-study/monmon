@@ -21,7 +21,7 @@ message GetSupportedStatsRequest {}
 // GetSupportedStatsResponse ответ с данными о поддерживаемых провайдерах статистики.
 message GetSupportedStatsResponse {
   // Provider информация о провайдере статистики.
-  Provider provider = 1;
+  repeated Provider providers = 1;
 }
 
 // GetStatsRequest запрос на получение статистики за период period каждые interval секунд.
