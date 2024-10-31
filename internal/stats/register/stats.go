@@ -18,7 +18,8 @@ type DataProvider interface {
 	// ID - идентификатор продайдера
 	ID() string
 
-	// ValueToProtoRecord преобразует данные провайдера в соответствующей тип gRPC message.
+	// ValueToProtoRecord преобразует данные val от провайдера в соответствующей тип gRPC message.
+	// Возвращает nil, если данные val не являются данными от провайдера.
 	ValueToProtoRecord(val any) *v1.Record
 
 	// ToProtoProvider преобразует информацию о провайдере в соответствующей тип gRPC message.

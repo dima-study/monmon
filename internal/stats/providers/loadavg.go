@@ -6,7 +6,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/dima-study/monmon/cmd/monmon-agent/stats/register"
+	"github.com/dima-study/monmon/internal/stats/register"
 	v1 "github.com/dima-study/monmon/pkg/api/proto/stats/v1"
 	"github.com/dima-study/monmon/pkg/scheduler"
 	"github.com/dima-study/monmon/pkg/stats/loadavg"

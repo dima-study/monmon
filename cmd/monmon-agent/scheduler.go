@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	_ "github.com/dima-study/monmon/cmd/monmon-agent/stats/providers"
-	"github.com/dima-study/monmon/cmd/monmon-agent/stats/register"
+	_ "github.com/dima-study/monmon/internal/stats/providers"
+	"github.com/dima-study/monmon/internal/stats/register"
 	v1 "github.com/dima-study/monmon/pkg/api/proto/stats/v1"
 	"github.com/dima-study/monmon/pkg/logger"
 	"github.com/dima-study/monmon/pkg/scheduler"
