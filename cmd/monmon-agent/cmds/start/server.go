@@ -12,11 +12,6 @@ import (
 	"github.com/dima-study/monmon/pkg/logger"
 )
 
-type (
-	StartServerFunc func() error
-	StopServerFunc  func(context.Context) error
-)
-
 func CreateServer(logger *logger.Logger, cfg *Config) (StartServerFunc, StopServerFunc) {
 	s := grpc.NewServer(
 		grpc.ChainStreamInterceptor(
