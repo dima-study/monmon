@@ -22,7 +22,7 @@ func (v Value) IsEmpty() bool {
 }
 
 func (p *DataProvider) String() string {
-	return providerID + "(" + provider_platform + ")"
+	return providerID + "(" + providerPlatform + ")"
 }
 
 func (p *DataProvider) ID() string {
@@ -34,5 +34,5 @@ func (p *DataProvider) Name() string {
 }
 
 func (p *DataProvider) Platform() string {
-	return provider_platform
+	return providerPlatform
 }

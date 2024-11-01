@@ -4,7 +4,7 @@ package loadavg
 
 import "github.com/dima-study/monmon/pkg/stats"
 
-const provider_platform = "fallback"
+const providerPlatform = "fallback"
 
 type DataProvider struct{}
 

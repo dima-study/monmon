@@ -21,7 +21,7 @@ func main() {
 	}
 }
 
-// cmdRunner интефрейс команд приложения
+// cmdRunner интефрейс команд приложения.
 type cmdRunner interface {
 	// Cmd возвращает название команды
 	Cmd() string

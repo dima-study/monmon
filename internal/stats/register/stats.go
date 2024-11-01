@@ -43,7 +43,7 @@ type supportedStat struct {
 var supportedStats = make(map[string]supportedStat)
 
 // RegisterStat регистрирует доступный провайдер.
-func RegisterStat(provider DataProvider, am AggregatorMaker) {
+func RegisterStat(provider DataProvider, am AggregatorMaker) { //nolint:revive
 	reason := provider.Available()
 
 	supportedStats[provider.ID()] = supportedStat{

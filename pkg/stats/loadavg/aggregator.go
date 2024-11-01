@@ -162,7 +162,7 @@ func (agg *LoadAvg) Grow(n int) {
 	}
 
 	apnd := make([]Value, n)
-	agg.buf = append(agg.buf[:agg.idx], append(apnd, agg.buf[agg.idx:]...)...)
+	agg.buf = append(agg.buf[:agg.idx], append(apnd, agg.buf[agg.idx:]...)...) //nolint:makezero
 }
 
 func (agg *LoadAvg) String() string {

@@ -13,19 +13,19 @@ import (
 )
 
 const (
-	loadavg_path      = "/proc/loadavg"
-	provider_platform = "linux"
+	loadavgPath      = "/proc/loadavg"
+	providerPlatform = "linux"
 )
 
 type DataProvider struct{}
 
 func (p *DataProvider) Available() error {
-	_, err := os.Stat(loadavg_path)
+	_, err := os.Stat(loadavgPath)
 	if err != nil {
 		return err
 	}
 
-	file, err := os.Open(loadavg_path)
+	file, err := os.Open(loadavgPath)
 	if err != nil {
 		return err
 	}
@@ -35,7 +35,7 @@ func (p *DataProvider) Available() error {
 }
 
 func (p *DataProvider) Data() (Value, error) {
-	file, err := os.Open(loadavg_path)
+	file, err := os.Open(loadavgPath)
 	if err != nil {
 		return Value{}, err
 	}

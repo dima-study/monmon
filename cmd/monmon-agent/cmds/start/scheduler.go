@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	_ "github.com/dima-study/monmon/internal/stats/providers"
+	_ "github.com/dima-study/monmon/internal/stats/providers" // автоматическая регистрация провайдеров
 	"github.com/dima-study/monmon/internal/stats/register"
 	v1 "github.com/dima-study/monmon/pkg/api/proto/stats/v1"
 	"github.com/dima-study/monmon/pkg/logger"
@@ -108,7 +108,7 @@ func Schedule(ctx context.Context, every time.Duration, period time.Duration) <-
 //
 // Основная идея:
 //  1. запускаем провайдер с определённой точностью (сколько "снимков" будет сделано в секунду времени)
-//  2. данные с провайдера передаются в агрегатор "provider", который расчитывает "среднее" за секунду по полученным снимкам
+//  2. данные с провайдера передаются в агрегатор "provider", он расчитывает "среднее" за секунду по полученным снимкам
 //  3. данные с агрегатора "provider" передаются во второй агрегатор "each second",
 //     который накапливает данные каждую секунду
 //

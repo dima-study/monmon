@@ -13,11 +13,11 @@ import (
 )
 
 type (
-	StartServerFunc func() error
+	StartServerFunc func() error //nolint:revive
 	StopServerFunc  func(context.Context) error
 )
 
-func StartAndShutdown(
+func StartAndShutdown( //nolint:revive
 	ctx context.Context,
 	logger *logger.Logger,
 	start StartServerFunc,

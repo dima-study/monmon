@@ -9,7 +9,7 @@ const (
 	LevelTrace = slog.Level(-8)
 )
 
-// Logger - логгер вокруг slog.Logger, задача которого - добавить уровень LevelTrace
+// Logger - логгер вокруг slog.Logger, задача которого - добавить уровень LevelTrace.
 type Logger struct {
 	*slog.Logger
 }
@@ -37,7 +37,7 @@ func (l *Logger) With(args ...any) *Logger {
 }
 
 // ReplaceAttrLevel использовать в HandlerOptions.ReplaceAttr,
-// чтобы корректно отображать уровень LevelTrace
+// чтобы корректно отображать уровень LevelTrace.
 func ReplaceAttrLevel(groups []string, a slog.Attr) slog.Attr {
 	if a.Key == slog.LevelKey {
 		level := a.Value.Any().(slog.Level)
