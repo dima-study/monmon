@@ -31,8 +31,6 @@ func (p *loadavgProvider) Data() (any, error) {
 }
 
 const (
-	providerName = "Average system load"
-
 	field1MinID   = "1min"
 	field1MinName = "1 minute"
 
@@ -93,7 +91,7 @@ func (p *loadavgProvider) ToProtoProvider() *v1.Provider {
 
 	protoP := v1.Provider{
 		ProviderID:          p.ID(),
-		ProviderName:        providerName,
+		ProviderName:        p.Name(),
 		Platform:            p.Platform(),
 		AvailabilityDetails: &details,
 	}

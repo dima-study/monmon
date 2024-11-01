@@ -2,7 +2,10 @@ package loadavg
 
 import "time"
 
-const provider_id = "loadavg"
+const (
+	providerID   = "loadavg"
+	providerName = "Average system load"
+)
 
 type Value struct {
 	One     int // усреднённое значение загрузки системы за 1мин (man 5 proc)
@@ -19,11 +22,15 @@ func (v Value) IsEmpty() bool {
 }
 
 func (p *DataProvider) String() string {
-	return provider_id + "(" + provider_platform + ")"
+	return providerID + "(" + provider_platform + ")"
 }
 
 func (p *DataProvider) ID() string {
-	return provider_id
+	return providerID
+}
+
+func (p *DataProvider) Name() string {
+	return providerName
 }
 
 func (p *DataProvider) Platform() string {
