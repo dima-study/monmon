@@ -25,10 +25,12 @@ var coordinators = []Coordinator{}
 
 // InitCoordinators инициализирует поддерживаемые и доступные для использования координаторы планировщика.
 // Провайдеры будут запущены с точностью accuracy.
-func InitCoordinators(ctx context.Context, logger *logger.Logger, accuracy int) {
+func InitCoordinators(ctx context.Context, logger *logger.Logger, accuracy int) error {
 	statsList := register.SupportedStats()
 
 	for _, providerID := range statsList {
+		logger.Info("registering coordinator", "provider", providerID)
+
 		if err := register.CheckStatAvailability(providerID); err != nil {
 			logger.Info("provider is not available", "provider", providerID, "reason", err.Error())
 			continue
@@ -50,11 +52,13 @@ func InitCoordinators(ctx context.Context, logger *logger.Logger, accuracy int) 
 			aggMaker,
 		)
 		if err != nil {
-			panic(fmt.Errorf("can't init provider '%s': %w", providerID, err))
+			return fmt.Errorf("failed to init coordinator for provider '%s': %w", providerID, err)
 		}
 
 		coordinators = append(coordinators, crd)
 	}
+
+	return nil
 }
 
 // Grower инерфейс для увеличения размера агрегатора.
