@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"os"
+
+	"github.com/dima-study/monmon/cmd/monmon-agent/cmds/providers"
 )
 
 func main() {
@@ -23,7 +25,7 @@ type cmdRunner interface {
 }
 
 func parseCmd() cmdRunner {
-	cmds := []cmdRunner{}
+	cmds := []cmdRunner{providers.New()}
 
 	var cmd cmdRunner
 	if len(os.Args) > 1 {
