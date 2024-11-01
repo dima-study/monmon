@@ -123,7 +123,7 @@ func (s *Coordinator) Schedule(
 // Если данные не могут быть получены от провайдера, будет логировано Error-сообщение о неудаче.
 func (s *Coordinator) startProvider(ctx context.Context, provider DataProvider, accuracy time.Duration) <-chan any {
 	l := s.logger.With("provider", provider.String())
-	l.Debug("start provider")
+	l.Debug("start provider", "accuracy", accuracy)
 
 	ch := make(chan any, 1)
 
