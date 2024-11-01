@@ -11,6 +11,9 @@ import (
 
 func main() {
 	cmd := parseCmd()
+	if cmd == nil {
+		os.Exit(1)
+	}
 
 	if err := cmd.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "Run command %s failed: %s\n", cmd.Cmd(), err)
@@ -18,16 +21,26 @@ func main() {
 	}
 }
 
+// cmdRunner интефрейс команд приложения
 type cmdRunner interface {
+	// Cmd возвращает название команды
 	Cmd() string
+
+	// Info возвращает информацию о команде
 	Info() string
-	Match(string, []string) bool
+
+	// Match возвращает true, если данная команда является cmd и поддерживает переданные параметры
+	Match(cmd string, args []string) bool
+
+	// Run запускает команду, возвращает ошибку выполнения команды
 	Run() error
 }
 
+// parseCmd возвращает необходимую команду для выполнения.
 func parseCmd() cmdRunner {
 	cmds := []cmdRunner{providers.New(), start.New()}
 
+	// Находим необходимую команду.
 	var cmd cmdRunner
 	if len(os.Args) > 1 {
 		for _, c := range cmds {
@@ -42,6 +55,7 @@ func parseCmd() cmdRunner {
 		}
 	}
 
+	// Если команда не найдена, печатаем сообщение о том как правильно запускать приложение.
 	if cmd == nil {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage: %s COMMAND\n\n", os.Args[0])
 		fmt.Fprintf(flag.CommandLine.Output(), "Available commands:\n")
@@ -49,8 +63,6 @@ func parseCmd() cmdRunner {
 			fmt.Fprintf(flag.CommandLine.Output(), "    %s\n", r.Cmd())
 			fmt.Fprintf(flag.CommandLine.Output(), "        %s\n", r.Info())
 		}
-
-		os.Exit(1)
 	}
 
 	return cmd
