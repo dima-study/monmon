@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -13,6 +14,8 @@ import (
 )
 
 func unsetEnv() {
+	os.Unsetenv("MONMON_SHUTDOWN_TIMEOUT")
+
 	os.Unsetenv("MONMON_GRPC_HOST")
 	os.Unsetenv("MONMON_GRPC_PORT")
 
@@ -36,6 +39,8 @@ func Test_ParseConfig(t *testing.T) {
 		{
 			name: "full config",
 			cfg: `
+  shutdown_timeout: 5s
+
   grpc:
     port: "54321"
     host: lolo
@@ -53,6 +58,8 @@ func Test_ParseConfig(t *testing.T) {
       - loadavg
       `,
 			want: Config{
+				ShutdownTimeout: 5 * time.Second,
+
 				GRPC: GRPCConfig{
 					Host: "lolo",
 					Port: "54321",
@@ -73,6 +80,8 @@ func Test_ParseConfig(t *testing.T) {
 		{
 			name: "overwrite by env",
 			cfg: `
+  shutdown_timeout: 5s
+
   grpc:
     port: "00000"
     host: "~~~~~"
@@ -92,6 +101,8 @@ func Test_ParseConfig(t *testing.T) {
       - wxyz
       `,
 			init: func() {
+				os.Setenv("MONMON_SHUTDOWN_TIMEOUT", "1s")
+
 				os.Setenv("MONMON_GRPC_HOST", "some.grpc.host")
 				os.Setenv("MONMON_GRPC_PORT", "12345")
 
@@ -105,6 +116,8 @@ func Test_ParseConfig(t *testing.T) {
 				os.Setenv("MONMON_SERVICE_DISABLED_PROVIDERS", "loadavg")
 			},
 			want: Config{
+				ShutdownTimeout: time.Second,
+
 				GRPC: GRPCConfig{
 					Host: "some.grpc.host",
 					Port: "12345",
@@ -126,6 +139,8 @@ func Test_ParseConfig(t *testing.T) {
 			name: "default",
 			cfg:  `default: true`,
 			want: Config{
+				ShutdownTimeout: 5 * time.Second,
+
 				GRPC: GRPCConfig{
 					Host: "localhost",
 					Port: "50051",
