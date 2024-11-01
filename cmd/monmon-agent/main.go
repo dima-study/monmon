@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/dima-study/monmon/cmd/monmon-agent/cmds/providers"
+	"github.com/dima-study/monmon/cmd/monmon-agent/cmds/start"
 )
 
 func main() {
@@ -25,7 +26,7 @@ type cmdRunner interface {
 }
 
 func parseCmd() cmdRunner {
-	cmds := []cmdRunner{providers.New()}
+	cmds := []cmdRunner{providers.New(), start.New()}
 
 	var cmd cmdRunner
 	if len(os.Args) > 1 {
