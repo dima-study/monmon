@@ -74,6 +74,11 @@ func NewAggScheduler(logger *logger.Logger, name string, ch <-chan any, agg Aggr
 	return &s
 }
 
+// Wait ждёт завершения планировщика агрегатора.
+func (s *AggScheduler) Wait() {
+	<-s.done
+}
+
 // Schedule создаёт канал запланированного чтения: через каждый every интервал в канал будут переданы
 // усреднённые агрегированные данные за период period.
 //
@@ -145,6 +150,7 @@ func (s *AggScheduler) Schedule(ctx context.Context, every time.Duration, period
 	return ch
 }
 
+// String возвращает название планировщика.
 func (s *AggScheduler) String() string {
 	return s.name
 }
