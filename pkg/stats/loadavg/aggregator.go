@@ -81,21 +81,23 @@ func (agg *LoadAvg) Add(val Value) {
 }
 
 // Get возвращает среднее значение за указанный период (period) в прошлом относительно текущего времени.
+// Время Т значения будет соответствовать времени на которое среднее значение расчитано.
 func (agg *LoadAvg) Get(period time.Duration) (Value, bool) {
-	// РЛок на получение значения
 	agg.mx.RLock()
+	defer agg.mx.RUnlock()
+
 	buf := agg.buf
 	prec := agg.prec
-
 	i := agg.idx - 1
+
 	if i < 0 {
 		i = len(buf) - 1
 	}
 
-	t := time.Now().Add(-period).Truncate(period) // округляем до period
-	agg.mx.RUnlock()
+	t := time.Now().Add(-period)
 
 	avg := Value{}
+	avgT := buf[i].T
 
 	// Идём по каждому элементу в буфере пока не выйдем за период
 	// -1 потому что буфер содержит "лишний" элемент (см. New)
@@ -104,10 +106,7 @@ func (agg *LoadAvg) Get(period time.Duration) (Value, bool) {
 			i = len(buf) - 1
 		}
 
-		// РЛок, чтобы избежать гонки записи-чтения на индексе i в буфере
-		agg.mx.RLock()
 		val := buf[i]
-		agg.mx.RUnlock()
 
 		// Буфер заполнен не полностью, не нашли данных за период
 		if val.IsEmpty() {
@@ -133,6 +132,7 @@ func (agg *LoadAvg) Get(period time.Duration) (Value, bool) {
 	avg.One = avg.One / prec
 	avg.Five = avg.Five / prec
 	avg.Fifteen = avg.Fifteen / prec
+	avg.T = avgT
 
 	return avg, true
 }
