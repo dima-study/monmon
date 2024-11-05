@@ -2,6 +2,7 @@ package start
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -60,6 +61,34 @@ func InitCoordinators(ctx context.Context, logger *logger.Logger, accuracy int) 
 	}
 
 	return nil
+}
+
+func ResetCoordinators(ctx context.Context) error {
+	errCh := make(chan error)
+	wg := sync.WaitGroup{}
+	wg.Add(len(coordinators))
+
+	for i := range len(coordinators) {
+		crd := coordinators[i]
+		go func() {
+			defer wg.Done()
+
+			if err := crd.c.Reset(ctx); err != nil {
+				errCh <- err
+			}
+		}()
+	}
+	go func() {
+		wg.Wait()
+		close(errCh)
+	}()
+
+	var err error
+	for e := range errCh {
+		err = errors.Join(err, e)
+	}
+
+	return err
 }
 
 // Grower инерфейс для увеличения размера агрегатора.
