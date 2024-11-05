@@ -22,6 +22,9 @@ type DataProvider interface {
 	// Data возвращает данные, которые предоставляет провайдер.
 	Data() (any, error)
 
+	// Cleanup очищает данные провайдера.
+	Cleanup(ctx context.Context) error
+
 	String() string
 }
 

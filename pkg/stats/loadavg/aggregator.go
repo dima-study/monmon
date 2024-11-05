@@ -1,6 +1,7 @@
 package loadavg
 
 import (
+	"context"
 	"sync"
 	"time"
 )
@@ -167,6 +168,10 @@ func (agg *LoadAvg) Grow(n int) {
 
 func (agg *LoadAvg) String() string {
 	return "loadavg"
+}
+
+func (agg *LoadAvg) Cleanup(ctx context.Context) error {
+	return nil
 }
 
 // precision возвращает необходимую точность для количества элементов в буфере:

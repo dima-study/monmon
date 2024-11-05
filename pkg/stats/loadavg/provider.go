@@ -1,6 +1,9 @@
 package loadavg
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 const (
 	providerID   = "loadavg"
@@ -35,4 +38,8 @@ func (p *DataProvider) Name() string {
 
 func (p *DataProvider) Platform() string {
 	return providerPlatform
+}
+
+func (p *DataProvider) Cleanup(ctx context.Context) error {
+	return nil
 }

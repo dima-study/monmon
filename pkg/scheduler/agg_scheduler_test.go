@@ -60,6 +60,10 @@ func (a *FakeAgg) String() string {
 	return "FakeAgg"
 }
 
+func (a *FakeAgg) Cleanup(ctx context.Context) error {
+	return nil
+}
+
 func newAggScheduler(t *testing.T, name string) (chan any, *FakeAgg, *AggScheduler) {
 	t.Helper()
 

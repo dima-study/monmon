@@ -17,6 +17,9 @@ type Aggregator interface {
 	// Get получает усреднённые агрегированные данные за период period
 	Get(period time.Duration) (any, bool)
 
+	// Cleanup очищает данные агрегатора.
+	Cleanup(ctx context.Context) error
+
 	String() string
 }
 
