@@ -81,7 +81,7 @@ type AvailabilityDetails struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// State состоиние статистики
+	// State состояние статистики
 	State AvailabilityState `protobuf:"varint,1,opt,name=state,proto3,enum=stats.v1.AvailabilityState" json:"state,omitempty"`
 	// Details причина по которой статистика не доступна (возможно пустое).
 	Details string `protobuf:"bytes,2,opt,name=details,proto3" json:"details,omitempty"`

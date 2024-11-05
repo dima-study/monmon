@@ -21,7 +21,7 @@ enum AvailabilityState {
 
 // AvailabilityDetails детальная информация о состоянии и причинах недоступности статистики.
 message AvailabilityDetails {
-  // State состоиние статистики
+  // State состояние статистики
   AvailabilityState state = 1;
 
   // Details причина по которой статистика не доступна (возможно пустое).
