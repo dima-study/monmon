@@ -33,20 +33,27 @@ type DataProvider interface {
 type Coordinator struct {
 	logger *logger.Logger
 
-	s  *AggScheduler
-	mx sync.Mutex
+	s          *AggScheduler
+	sCleanupFn func(context.Context) error
+	stop       chan struct{}
+	mx         sync.Mutex
 }
 
 // NewCoordinator создаёт новый координатор.
 func NewCoordinator(l *logger.Logger) *Coordinator {
+	stop := make(chan struct{})
+	close(stop)
+
 	coord := Coordinator{
 		logger: l,
+		stop:   stop,
 	}
 
 	return &coord
 }
 
-// Start запускает кординатор для указанного агрегатора agg и провайдера provider с указанной точностью accuracy.
+// Start запускает кординатор для указанного агрегатора agg и провайдера provider
+// с указанной точностью/частотой accuracy.
 // Если координатор c был запущен ранее, будет возвращена ошибка ErrAlreadyStarted.
 // Если провайдер не доступен, будет возвращена ошибка с причиной.
 func (s *Coordinator) Start(
@@ -66,12 +73,20 @@ func (s *Coordinator) Start(
 		return fmt.Errorf("%s: %w", provider.String(), err)
 	}
 
-	s.s = NewAggScheduler(
+	s.stop = make(chan struct{})
+	aggS := NewAggScheduler(
 		s.logger,
 		"stat provider",
 		s.startProvider(ctx, provider, accuracy),
 		agg,
 	)
+
+	s.s = aggS
+	s.sCleanupFn = func(ctx context.Context) error {
+		s.logger.Debug("cleanup")
+
+		return errors.Join(aggS.Wait(ctx), provider.Cleanup(ctx))
+	}
 
 	return nil
 }
@@ -102,13 +117,20 @@ func (s *Coordinator) AppendAggregator(
 
 	// context.Background т.к запланированное чтение будет завершено при завершении родительского планировщика.
 	ch := s.s.Schedule(context.Background(), every, period)
-
-	s.s = NewAggScheduler(
+	aggS := NewAggScheduler(
 		s.logger,
 		purpose,
 		ch,
 		agg,
 	)
+	s.s = aggS
+
+	// цепочка ожидания завершения планировщика агрегатора
+	cleanupSPrev := s.sCleanupFn
+	s.sCleanupFn = func(ctx context.Context) error {
+		err := errors.Join(aggS.Wait(ctx), cleanupSPrev(ctx))
+		return err
+	}
 
 	return nil
 }
@@ -121,15 +143,34 @@ func (s *Coordinator) Schedule(
 	every time.Duration,
 	period time.Duration,
 ) (<-chan any, error) {
+	s.mx.Lock()
+	defer s.mx.Unlock()
+
 	if s.s == nil {
 		return nil, ErrNotStarted
 	}
 
 	return s.s.Schedule(ctx, every, period), nil
+}
+
+// Reset сбрасывает запущенный координатор в состояние останова.
+// Если координатор был запущен, то останавливает провайдер и очищает (Cleanup) провайдер и цепочку агрегаторов.
+// После вызова Reset координатор может быть повторно запущен с новыми параметрами.
+func (s *Coordinator) Reset(ctx context.Context) error {
 	s.mx.Lock()
 	defer s.mx.Unlock()
 
-	return s.s.Schedule(ctx, every, period)
+	if s.s == nil {
+		return nil
+	}
+
+	close(s.stop)
+	err := s.sCleanupFn(ctx)
+
+	s.s = nil
+	s.sCleanupFn = nil
+
+	return err
 }
 
 // startProvider запускает провайдер статистики и возвращает канал с данными от провайдера.
@@ -153,6 +194,8 @@ func (s *Coordinator) startProvider(ctx context.Context, provider DataProvider, 
 			select {
 			case <-ctx.Done():
 				return
+			case <-s.stop:
+				return
 			default:
 			}
 
@@ -170,6 +213,8 @@ func (s *Coordinator) startProvider(ctx context.Context, provider DataProvider, 
 					l.Warn("value is not sent")
 				}
 			case <-ctx.Done():
+				return
+			case <-s.stop:
 				return
 			}
 		}
