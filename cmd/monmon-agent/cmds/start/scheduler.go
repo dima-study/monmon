@@ -134,12 +134,15 @@ func initCoordinator(
 	}
 
 	agg := aggMaker(1)
-	crd.AppendAggregator(
+	err = crd.AppendAggregator(
 		"each second",
 		agg,
 		time.Second,
 		time.Second,
 	)
+	if err != nil {
+		return Coordinator{}, fmt.Errorf("can't start coordinator: %w", err)
+	}
 
 	return Coordinator{
 		c:                    crd,

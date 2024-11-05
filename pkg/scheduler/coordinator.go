@@ -10,7 +10,10 @@ import (
 	"github.com/dima-study/monmon/pkg/logger"
 )
 
-var ErrAlreadyStarted = errors.New("coordinator is already started")
+var (
+	ErrAlreadyStarted = errors.New("coordinator is already started")
+	ErrNotStarted     = errors.New("coordinator is not started")
+)
 
 type DataProvider interface {
 	// Available возвращает ошибку по которой провайдер не доступен
@@ -70,19 +73,20 @@ func (s *Coordinator) Start(
 	return nil
 }
 
-// AppendAggregator позволяет собирать цепочку из агрегаторов.
+// AppendAggregator позволяет собирать цепочку из агрегаторов в запущенном координаторе.
 // Решает ситуацию, когда первый/входящий агрегатор собирает более точные данные/более часто, чем последний/выходной.
+// Если координатор не запущен, возвращает ошибку ErrNotStarted.
 func (s *Coordinator) AppendAggregator(
 	purpose string,
 	agg Aggregator,
 	every time.Duration,
 	period time.Duration,
-) {
+) error {
 	s.mx.Lock()
 	defer s.mx.Unlock()
 
 	if s.s == nil {
-		panic("coordinator is not started")
+		return ErrNotStarted
 	}
 
 	s.logger.Debug("append aggregator",
@@ -102,6 +106,8 @@ func (s *Coordinator) AppendAggregator(
 		ch,
 		agg,
 	)
+
+	return nil
 }
 
 // Schedule возвращает канал (буферезированный на 1 элемент) с данными запланированного чтения из выходного агрегатора
