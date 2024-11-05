@@ -2,8 +2,8 @@ package scheduler
 
 import (
 	"context"
+	"io"
 	"log/slog"
-	"os"
 	"sync"
 	"testing"
 	"time"
@@ -13,14 +13,11 @@ import (
 	"github.com/dima-study/monmon/pkg/logger"
 )
 
-type FakeValue struct {
-	v int
-	t time.Time
-}
-
 type FakeAgg struct {
-	values []int
-	mx     sync.Mutex
+	m       int
+	values  []int
+	mx      sync.Mutex
+	cleaned bool
 }
 
 func NewFakeAgg() *FakeAgg {
@@ -32,14 +29,10 @@ func (a *FakeAgg) Add(val any) {
 	switch v := val.(type) {
 	case int:
 		a.mx.Lock()
-		a.values = append(
-			a.values,
-			v,
-			// FakeValue{
-			// 	v: v,
-			// 	t: time.Now(),
-			// },
-		)
+		if a.m > 0 {
+			v = v * a.m
+		}
+		a.values = append(a.values, v)
 		a.mx.Unlock()
 	default:
 	}
@@ -61,6 +54,7 @@ func (a *FakeAgg) String() string {
 }
 
 func (a *FakeAgg) Cleanup(ctx context.Context) error {
+	a.cleaned = true
 	return nil
 }
 
@@ -68,11 +62,11 @@ func newAggScheduler(t *testing.T, name string) (chan any, *FakeAgg, *AggSchedul
 	t.Helper()
 
 	h := slog.NewTextHandler(io.Discard, &slog.HandlerOptions{Level: logger.LevelTrace})
-	logger := logger.New(h)
+	l := logger.New(h)
 
 	ch := make(chan any)
 	agg := NewFakeAgg()
-	sch := NewAggScheduler(logger, name, ch, agg)
+	sch := NewAggScheduler(l, name, ch, agg)
 
 	return ch, agg, sch
 }
@@ -85,7 +79,7 @@ func TestAggScheduler(t *testing.T) {
 	}
 
 	close(providerCh)
-	sch.Wait()
+	sch.Wait(context.Background())
 
 	require.Len(t, agg.values, 10, "must be correct size")
 	for i := range 10 {
@@ -133,7 +127,7 @@ func TestAggScheduler_Schedule(t *testing.T) {
 	}()
 
 	wg.Wait()
-	sch.Wait()
+	sch.Wait(context.Background())
 
 	// t.Log(send)
 	// t.Log(got)
@@ -147,7 +141,7 @@ func TestAggScheduler_String(t *testing.T) {
 	providerCh, _, sch := newAggScheduler(t, name)
 
 	close(providerCh)
-	sch.Wait()
+	sch.Wait(context.Background())
 
 	require.Equal(t, name, sch.String(), "must return correct name")
 }

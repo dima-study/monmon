@@ -18,6 +18,7 @@ type Aggregator interface {
 	Get(period time.Duration) (any, bool)
 
 	// Cleanup очищает данные агрегатора.
+	// Может быть использовано для уделения временных файлов.
 	Cleanup(ctx context.Context) error
 
 	String() string
@@ -106,9 +107,12 @@ func NewAggScheduler(logger *logger.Logger, name string, ch <-chan any, agg Aggr
 	return &s
 }
 
-// Wait ждёт завершения планировщика агрегатора.
-func (s *AggScheduler) Wait() {
+// Wait ждёт завершения планировщика агрегатора и выполняет очистку (Cleanup) аггрегатора.
+// Возвращает результат очистки.
+func (s *AggScheduler) Wait(ctx context.Context) error {
 	<-s.done
+	s.logger.Debug("cleanup")
+	return s.agg.Cleanup(ctx)
 }
 
 // Schedule создаёт канал запланированного чтения: через каждый every интервал в канал будут переданы
