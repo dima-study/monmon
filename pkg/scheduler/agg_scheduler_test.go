@@ -67,7 +67,7 @@ func (a *FakeAgg) Cleanup(ctx context.Context) error {
 func newAggScheduler(t *testing.T, name string) (chan any, *FakeAgg, *AggScheduler) {
 	t.Helper()
 
-	h := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: logger.LevelTrace})
+	h := slog.NewTextHandler(io.Discard, &slog.HandlerOptions{Level: logger.LevelTrace})
 	logger := logger.New(h)
 
 	ch := make(chan any)
