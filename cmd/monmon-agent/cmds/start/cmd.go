@@ -2,6 +2,7 @@ package start
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -66,10 +67,7 @@ func (cmd *Cmd) cmdStartInitFlag() {
 	flag.Parse()
 }
 
-func run(ctx context.Context, logger *logger.Logger, levelVar *slog.LevelVar, configFile string) error {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
+func run(ctx context.Context, logger *logger.Logger, levelVar *slog.LevelVar, configFile string) (err error) {
 	logger.Info(
 		"starting agent",
 		slog.Group(
@@ -107,13 +105,26 @@ func run(ctx context.Context, logger *logger.Logger, levelVar *slog.LevelVar, co
 		}
 	}
 
-	if err := InitCoordinators(ctx, logger, cfg.Service.Accuracy); err != nil {
+	// Контекст для координаторов
+	coordCtx, cancelCoord := context.WithCancel(ctx)
+	defer func() {
+		// Если случились ошибки при завершении работы координаторов, добавляем их в возврат.
+		errors.Join(err, ResetCoordinators(ctx))
+	}()
+	defer cancelCoord()
+
+	if err := InitCoordinators(coordCtx, logger, cfg.Service.Accuracy); err != nil {
 		return fmt.Errorf("can't init coordinators: %w", err)
 	}
 
 	startServer, stopServer := CreateServer(logger, &cfg)
 
-	StartAndShutdown(ctx, logger, startServer, stopServer, cfg.ShutdownTimeout)
+	// Отменяем контекст координаторов, после чего гасим сервер.
+	stopService := func(ctx context.Context) error {
+		cancelCoord()
 
-	return nil
+		return stopServer(ctx)
+	}
+
+	return StartAndShutdown(ctx, logger, startServer, stopService, cfg.ShutdownTimeout)
 }
