@@ -17,6 +17,7 @@ import (
 // и функцию конвертации значения от агрегатора в Record для дальнейшей передачи клиенту.
 type Coordinator struct {
 	c                    *scheduler.Coordinator
+	logger               *logger.Logger
 	agg                  scheduler.Aggregator
 	valueToProtoRecordFn func(val any) *v1.Record
 }
@@ -85,7 +86,16 @@ func Schedule(ctx context.Context, every time.Duration, period time.Duration) <-
 		go func() {
 			defer wg.Done()
 
-			ch := crd.c.Schedule(ctx, every, period)
+			ch, err := crd.c.Schedule(ctx, every, period)
+			if err != nil {
+				crd.logger.Error("schedule failed",
+					"error", err,
+					"every", every,
+					"period", period,
+				)
+				return
+			}
+
 			for v := range ch {
 				if rec := crd.valueToProtoRecordFn(v); rec != nil {
 					outCh <- rec
@@ -146,6 +156,7 @@ func initCoordinator(
 
 	return Coordinator{
 		c:                    crd,
+		logger:               logger,
 		agg:                  agg,
 		valueToProtoRecordFn: provider.ValueToProtoRecord,
 	}, nil

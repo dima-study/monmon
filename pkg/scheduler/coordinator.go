@@ -115,11 +115,17 @@ func (s *Coordinator) AppendAggregator(
 
 // Schedule возвращает канал (буферезированный на 1 элемент) с данными запланированного чтения из выходного агрегатора
 // каждые every за период period.
+// Возвращает ошибку, если невозможно запланировать чтение.
 func (s *Coordinator) Schedule(
 	ctx context.Context,
 	every time.Duration,
 	period time.Duration,
-) <-chan any {
+) (<-chan any, error) {
+	if s.s == nil {
+		return nil, ErrNotStarted
+	}
+
+	return s.s.Schedule(ctx, every, period), nil
 	s.mx.Lock()
 	defer s.mx.Unlock()
 
