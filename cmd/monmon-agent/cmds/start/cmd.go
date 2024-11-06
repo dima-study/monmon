@@ -37,7 +37,7 @@ func (cmd *Cmd) Match(command string, args []string) bool {
 
 func (cmd *Cmd) Run() error {
 	os.Args = append(os.Args[0:1], os.Args[2:]...)
-	cmd.cmdStartInitFlag()
+	cmd.initFlag()
 
 	levelVar := new(slog.LevelVar)
 	levelVar.Set(slog.LevelInfo)
@@ -52,7 +52,7 @@ func (cmd *Cmd) Run() error {
 	return run(context.Background(), logger, levelVar, cmd.configFile)
 }
 
-func (cmd *Cmd) cmdStartInitFlag() {
+func (cmd *Cmd) initFlag() {
 	flag.StringVar(&cmd.configFile, "config", "monmon.yaml", "Path to configuration file")
 
 	flag.Usage = func() {
