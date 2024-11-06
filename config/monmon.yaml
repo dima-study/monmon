@@ -1,0 +1,12 @@
+shutdown_timeout: 5s
+
+grpc:
+  host: 0.0.0.0
+  port: 50051
+
+logger:
+  level: info
+
+service:
+  disabled_providers:
+    #- loadavg
