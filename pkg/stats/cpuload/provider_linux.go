@@ -104,7 +104,7 @@ type rawValue struct {
 }
 
 // Расчёт использования cpu в линуксе
-// github.com/hightemp/docLinux/blob/master/articles/Как рассчитывается время и процент использования ЦП Linux.md
+// github.com/hightemp/docLinux/blob/master/articles/Как рассчитывается время и процент использования ЦП Linux.md .
 func parse(s string) (rawValue, error) {
 	if !strings.HasPrefix(s, "cpu ") {
 		return rawValue{}, errors.New("invalid line")
