@@ -5,6 +5,7 @@ package cpuload
 import (
 	"errors"
 	"fmt"
+	"time"
 	"unsafe"
 
 	"golang.org/x/sys/windows"
@@ -118,6 +119,7 @@ func (p *DataProvider) Data() (Value, error) {
 		User:   int(100_00 * (v.user - p.prev.user) / (v.total - p.prev.total)),
 		System: int(100_00 * (v.system - p.prev.system) / (v.total - p.prev.total)),
 		Idle:   int(100_00 * (v.idle - p.prev.idle) / (v.total - p.prev.total)),
+		T:      time.Now(),
 	}
 
 	p.prev = v
