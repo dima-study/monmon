@@ -37,6 +37,8 @@ func (agg *LoadAvg) Add(val Value) {
 	val.Five = val.Five * agg.prec
 	val.Fifteen = val.Fifteen * agg.prec
 
+	val.T = time.Now()
+
 	// Добавление и расчёт среднего значения происходит в локе
 	agg.mx.Lock()
 	defer agg.mx.Unlock()

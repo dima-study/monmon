@@ -37,6 +37,8 @@ func (agg *CPULoad) Add(val Value) {
 	val.System = val.System * agg.prec
 	val.Idle = val.Idle * agg.prec
 
+	val.T = time.Now()
+
 	// Добавление и расчёт среднего значения происходит в локе
 	agg.mx.Lock()
 	defer agg.mx.Unlock()
