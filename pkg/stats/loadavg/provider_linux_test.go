@@ -5,6 +5,8 @@ package loadavg
 import (
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestParse(t *testing.T) {
@@ -74,4 +76,14 @@ func TestParse(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestNewProvider(t *testing.T) {
+	p := DataProvider{}
+	if err := p.Available(); err != nil {
+		t.Skip("not available")
+	}
+
+	_, err := p.Data()
+	require.NoError(t, err, "must not have error")
 }
