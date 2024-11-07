@@ -3,14 +3,29 @@ ifneq (,$(wildcard ./.env.mk))
     export
 endif
 
+
+ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
+    BUILDOS := Windows
+else
+    BUILDOS := $(shell uname | tr A-Z a-z)
+endif
+
+
+BUILDARCH ?= $(shell uname -m)
+
+ifeq ($(BUILDARCH),x86_64)
+	BUILDARCH := amd64
+endif
+
+
 .PHONY: help
 help:
 	@printf "%-20s %s\n" "Target" "Description"
 	@printf "%-20s %s\n" "------" "-----------"
 	@make -pqR : 2>/dev/null \
-		| awk -v RS= -F: '/^# File/,/^# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}' \
+		| awk -v RS= -F: '/# Files/,/^# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}' \
     | sort \
-    | grep -v -e '^[^[:alnum:]]' -e '^$@$$' \
+    | grep -v -e '^[^[:alnum:]]' -e '^$@$$' -e '-meta$$' \
     | xargs -I _ sh -c 'printf "%-20s " _; make _ -nB | (grep -i "^# Help:" || echo "") | tail -1 | sed "s/^# Help: //g"'
 
 
@@ -38,9 +53,19 @@ generate-proto: install-deps-protoc
 #
 
 .PHONY: build
-build: generate
-	@# Help: build monmon agent $(AGENT_BIN)
-	CGO_ENABLED=0 go build -v -o $(AGENT_BIN) -ldflags "$(LDFLAGS)" ./cmd/monmon-agent
+build: $(addprefix build-sub-,$(ARCH_LIST))
+	@# Help: build multitarget monmon agent
+build-sub-%:
+	$(MAKE) build-app-arch-meta TARGET_ARCH=$*
+
+.PHONY: build-app-arch-meta
+build-app-arch-meta: $(addprefix build-app-arch-sub-,$(OS_LIST))
+build-app-arch-sub-%:
+	$(MAKE) build-app-os-meta TARGET_OS=$*
+
+.PHONY: build-app-os-meta
+build-app-os-meta:
+	CGO_ENABLED=0 GOOS=$(TARGET_OS) GOARCH=$(TARGET_ARCH) go build -v -o $(AGENT_BIN) -ldflags "$(LDFLAGS)" ./cmd/monmon-agent
 
 
 .PHONY: build-img-all
@@ -61,9 +86,11 @@ build-img-agent:
 #
 
 .PHONY: run
-run: build
-	@# Help: Run monmon agent app $(AGENT_BIN) with default config $(AGENT_CONFIG)
-	@$(AGENT_BIN) start -config $(AGENT_CONFIG)
+run:
+	@# Help: Run monmon agent app ($(BUILDOS)-$(BUILDARCH)) with default config $(AGENT_CONFIG)
+	$(MAKE) run-meta TARGET_OS=$(BUILDOS) TARGET_ARCH=$(BUILDARCH)
+run-meta: build-app-os-meta
+	$(AGENT_BIN) start -config $(AGENT_CONFIG)
 
 
 #
