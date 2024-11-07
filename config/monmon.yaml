@@ -10,3 +10,4 @@ logger:
 service:
   disabled_providers:
     #- loadavg
+    #- cpuload
