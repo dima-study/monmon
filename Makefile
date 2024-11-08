@@ -68,7 +68,7 @@ build-app-arch-sub-%:
 	$(MAKE) build-app TARGET_OS=$*
 
 .PHONY: build-app
-build-app: build-app-agent
+build-app: build-app-agent build-app-client
 	@# Help: Build monmon apps: TARGET_OS="$(TARGET_OS)", TARGET_ARCH="$(TARGET_ARCH)"
 
 
@@ -78,6 +78,14 @@ build-app-agent:
 	$(MAKE) build-app-agent-meta
 build-app-agent-meta: generate
 	CGO_ENABLED=0 GOOS=$(TARGET_OS) GOARCH=$(TARGET_ARCH) go build -v -o $(AGENT_BIN) -ldflags "$(LDFLAGS)" ./cmd/monmon-agent
+
+
+.PHONY: build-app-client
+build-app-client:
+	@# Help: Build monmon client: TARGET_OS="$(TARGET_OS)", TARGET_ARCH="$(TARGET_ARCH)"
+	$(MAKE) build-app-client-meta
+build-app-client-meta: generate
+	CGO_ENABLED=0 GOOS=$(TARGET_OS) GOARCH=$(TARGET_ARCH) go build -v -o $(CLIENT_BIN) -ldflags "$(LDFLAGS)" ./cmd/monmon-client
 
 
 .PHONY: build-img-all
