@@ -9,14 +9,19 @@ option go_package = "github.com/dima-study/monmon/pkg/api/proto/stats/v1";
 
 // AvailabilityState состоиние статистики
 enum AvailabilityState {
+  option (go.enum) = { stringer: 'pbString' };
+
+  // статистика не задана
+  AVAILABILITY_STATE_UNSPECIFIED = 0 [(go.value).name = 'Unspecified'];
+
   // статистика доступна
-  AVAILABILITY_STATE_AVAILABLE = 0 [(go.value).name = 'Available'];
+  AVAILABILITY_STATE_AVAILABLE = 1 [(go.value).name = 'Available'];
 
   // ошибка при инициализации провайдера статистики
-  AVAILABILITY_STATE_ERROR = 1 [(go.value).name = 'Error'];
+  AVAILABILITY_STATE_ERROR = 2 [(go.value).name = 'Error'];
 
   // статистика отключена на сервере
-  AVAILABILITY_STATE_DISABLED = 2 [(go.value).name = 'Disabled'];
+  AVAILABILITY_STATE_DISABLED = 3 [(go.value).name = 'Disabled'];
 }
 
 // AvailabilityDetails детальная информация о состоянии и причинах недоступности статистики.
