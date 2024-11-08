@@ -18,6 +18,10 @@ ifeq ($(BUILDARCH),x86_64)
 endif
 
 
+TARGET_OS := $(BUILDOS)
+TARGET_ARCH := $(BUILDARCH)
+
+
 .PHONY: help
 help:
 	@printf "%-20s %s\n" "Target" "Description"
@@ -54,17 +58,25 @@ generate-proto: install-deps-protoc
 
 .PHONY: build
 build: $(addprefix build-sub-,$(ARCH_LIST))
-	@# Help: build multitarget monmon agent
+	@# Help: Build multi-target monmon apps: ARCH_LIST="$(ARCH_LIST)", OS_LIST="$(OS_LIST)"
 build-sub-%:
 	$(MAKE) build-app-arch-meta TARGET_ARCH=$*
 
 .PHONY: build-app-arch-meta
 build-app-arch-meta: $(addprefix build-app-arch-sub-,$(OS_LIST))
 build-app-arch-sub-%:
-	$(MAKE) build-app-os-meta TARGET_OS=$*
+	$(MAKE) build-app TARGET_OS=$*
 
-.PHONY: build-app-os-meta
-build-app-os-meta:
+.PHONY: build-app
+build-app: build-app-agent
+	@# Help: Build monmon apps: TARGET_OS="$(TARGET_OS)", TARGET_ARCH="$(TARGET_ARCH)"
+
+
+.PHONY: build-app-agent
+build-app-agent:
+	@# Help: Build monmon agent: TARGET_OS="$(TARGET_OS)", TARGET_ARCH="$(TARGET_ARCH)"
+	$(MAKE) build-app-agent-meta
+build-app-agent-meta:
 	CGO_ENABLED=0 GOOS=$(TARGET_OS) GOARCH=$(TARGET_ARCH) go build -v -o $(AGENT_BIN) -ldflags "$(LDFLAGS)" ./cmd/monmon-agent
 
 
@@ -86,10 +98,10 @@ build-img-agent:
 #
 
 .PHONY: run
-run:
-	@# Help: Run monmon agent app ($(BUILDOS)-$(BUILDARCH)) with default config $(AGENT_CONFIG)
-	$(MAKE) run-meta TARGET_OS=$(BUILDOS) TARGET_ARCH=$(BUILDARCH)
-run-meta: build-app-os-meta
+run: build-app
+	@# Help: Run monmon agent with default config $(AGENT_CONFIG): TARGET_OS="$(TARGET_OS)", TARGET_ARCH="$(TARGET_ARCH)"
+	$(MAKE) run-meta
+run-meta:
 	$(AGENT_BIN) start -config $(AGENT_CONFIG)
 
 
