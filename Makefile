@@ -76,7 +76,7 @@ build-app: build-app-agent
 build-app-agent:
 	@# Help: Build monmon agent: TARGET_OS="$(TARGET_OS)", TARGET_ARCH="$(TARGET_ARCH)"
 	$(MAKE) build-app-agent-meta
-build-app-agent-meta:
+build-app-agent-meta: generate
 	CGO_ENABLED=0 GOOS=$(TARGET_OS) GOARCH=$(TARGET_ARCH) go build -v -o $(AGENT_BIN) -ldflags "$(LDFLAGS)" ./cmd/monmon-agent
 
 
