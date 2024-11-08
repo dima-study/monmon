@@ -8,6 +8,14 @@ logger:
   level: info
 
 service:
+  accuracy: 10
+
+  min_interval: 1
+  max_interval: 300
+
+  min_period: 1
+  max_period: 300
+
   disabled_providers:
     #- loadavg
     #- cpuload
