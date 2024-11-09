@@ -5,7 +5,7 @@ endif
 
 
 ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
-    BUILDOS := Windows
+    BUILDOS := windows
 else
     BUILDOS := $(shell uname | tr A-Z a-z)
 endif
