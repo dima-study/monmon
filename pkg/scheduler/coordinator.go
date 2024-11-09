@@ -1,0 +1,224 @@
+package scheduler
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"sync"
+	"time"
+
+	"github.com/dima-study/monmon/pkg/logger"
+)
+
+var (
+	ErrAlreadyStarted = errors.New("coordinator is already started")
+	ErrNotStarted     = errors.New("coordinator is not started")
+)
+
+type DataProvider interface {
+	// Available возвращает ошибку по которой провайдер не доступен
+	Available() error
+
+	// Data возвращает данные, которые предоставляет провайдер.
+	Data() (any, error)
+
+	// Cleanup очищает данные провайдера.
+	Cleanup(ctx context.Context) error
+
+	String() string
+}
+
+// Coordinator коодринатор планировщика.
+// Задача - связать провайдера статистики, агрегаторы и планировать входящие запросы на получение статистики.
+type Coordinator struct {
+	logger *logger.Logger
+
+	s          *AggScheduler
+	sCleanupFn func(context.Context) error
+	stop       chan struct{}
+	mx         sync.Mutex
+}
+
+// NewCoordinator создаёт новый координатор.
+func NewCoordinator(l *logger.Logger) *Coordinator {
+	stop := make(chan struct{})
+	close(stop)
+
+	coord := Coordinator{
+		logger: l,
+		stop:   stop,
+	}
+
+	return &coord
+}
+
+// Start запускает кординатор для указанного агрегатора agg и провайдера provider
+// с указанной точностью/частотой accuracy.
+// Если координатор c был запущен ранее, будет возвращена ошибка ErrAlreadyStarted.
+// Если провайдер не доступен, будет возвращена ошибка с причиной.
+func (s *Coordinator) Start(
+	ctx context.Context,
+	provider DataProvider,
+	accuracy time.Duration,
+	agg Aggregator,
+) error {
+	s.mx.Lock()
+	defer s.mx.Unlock()
+
+	if s.s != nil {
+		return ErrAlreadyStarted
+	}
+
+	if err := provider.Available(); err != nil {
+		return fmt.Errorf("%s: %w", provider.String(), err)
+	}
+
+	s.stop = make(chan struct{})
+	aggS := NewAggScheduler(
+		s.logger,
+		"stat provider",
+		s.startProvider(ctx, provider, accuracy),
+		agg,
+	)
+
+	s.s = aggS
+	s.sCleanupFn = func(ctx context.Context) error {
+		s.logger.Debug("cleanup")
+
+		return errors.Join(aggS.Wait(ctx), provider.Cleanup(ctx))
+	}
+
+	return nil
+}
+
+// AppendAggregator позволяет собирать цепочку из агрегаторов в запущенном координаторе.
+// Решает ситуацию, когда первый/входящий агрегатор собирает более точные данные/более часто, чем последний/выходной.
+// Если координатор не запущен, возвращает ошибку ErrNotStarted.
+func (s *Coordinator) AppendAggregator(
+	purpose string,
+	agg Aggregator,
+	every time.Duration,
+	period time.Duration,
+) error {
+	s.mx.Lock()
+	defer s.mx.Unlock()
+
+	if s.s == nil {
+		return ErrNotStarted
+	}
+
+	s.logger.Debug("append aggregator",
+		"aggregator", agg.String(),
+		"append", purpose,
+		"to", s.s.String(),
+		"every", every.String(),
+		"period", period.String(),
+	)
+
+	// context.Background т.к запланированное чтение будет завершено при завершении родительского планировщика.
+	ch := s.s.Schedule(context.Background(), every, period)
+	aggS := NewAggScheduler(
+		s.logger,
+		purpose,
+		ch,
+		agg,
+	)
+	s.s = aggS
+
+	// цепочка ожидания завершения планировщика агрегатора
+	cleanupSPrev := s.sCleanupFn
+	s.sCleanupFn = func(ctx context.Context) error {
+		err := errors.Join(aggS.Wait(ctx), cleanupSPrev(ctx))
+		return err
+	}
+
+	return nil
+}
+
+// Schedule возвращает канал (буферезированный на 1 элемент) с данными запланированного чтения из выходного агрегатора
+// каждые every за период period.
+// Возвращает ошибку, если невозможно запланировать чтение.
+func (s *Coordinator) Schedule(
+	ctx context.Context,
+	every time.Duration,
+	period time.Duration,
+) (<-chan any, error) {
+	s.mx.Lock()
+	defer s.mx.Unlock()
+
+	if s.s == nil {
+		return nil, ErrNotStarted
+	}
+
+	return s.s.Schedule(ctx, every, period), nil
+}
+
+// Reset сбрасывает запущенный координатор в состояние останова.
+// Если координатор был запущен, то останавливает провайдер и очищает (Cleanup) провайдер и цепочку агрегаторов.
+// После вызова Reset координатор может быть повторно запущен с новыми параметрами.
+func (s *Coordinator) Reset(ctx context.Context) error {
+	s.mx.Lock()
+	defer s.mx.Unlock()
+
+	if s.s == nil {
+		return nil
+	}
+
+	close(s.stop)
+	err := s.sCleanupFn(ctx)
+
+	s.s = nil
+	s.sCleanupFn = nil
+
+	return err
+}
+
+// startProvider запускает провайдер статистики и возвращает канал с данными от провайдера.
+// Данные от провайдера направляются в буферезированный канал (1 элемент).
+// Если данные не могут быть записаны в канал, будет логировано Warn-сообщение о неудаче.
+// Если данные не могут быть получены от провайдера, будет логировано Error-сообщение о неудаче.
+func (s *Coordinator) startProvider(ctx context.Context, provider DataProvider, accuracy time.Duration) <-chan any {
+	l := s.logger.With("provider", provider.String())
+	l.Debug("start provider", "accuracy", accuracy)
+
+	ch := make(chan any, 1)
+
+	go func() {
+		defer l.Debug("stop provider")
+		defer close(ch)
+
+		tic := time.NewTicker(accuracy)
+		defer tic.Stop()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-s.stop:
+				return
+			default:
+			}
+
+			select {
+			case <-tic.C:
+				v, err := provider.Data()
+				if err != nil {
+					l.Error("provider.Data", "error", err)
+					continue
+				}
+
+				select {
+				case ch <- v:
+				default:
+					l.Warn("value is not sent")
+				}
+			case <-ctx.Done():
+				return
+			case <-s.stop:
+				return
+			}
+		}
+	}()
+
+	return ch
+}

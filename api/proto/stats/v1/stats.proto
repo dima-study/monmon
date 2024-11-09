@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+package stats.v1;
+
+import "google/protobuf/timestamp.proto";
+import "patch/go.proto";
+
+option go_package = "github.com/dima-study/monmon/pkg/api/proto/stats/v1";
+
+// AvailabilityState состоиние статистики
+enum AvailabilityState {
+  option (go.enum) = { stringer: 'pbString' };
+
+  // статистика не задана
+  AVAILABILITY_STATE_UNSPECIFIED = 0 [(go.value).name = 'Unspecified'];
+
+  // статистика доступна
+  AVAILABILITY_STATE_AVAILABLE = 1 [(go.value).name = 'Available'];
+
+  // ошибка при инициализации провайдера статистики
+  AVAILABILITY_STATE_ERROR = 2 [(go.value).name = 'Error'];
+
+  // статистика отключена на сервере
+  AVAILABILITY_STATE_DISABLED = 3 [(go.value).name = 'Disabled'];
+}
+
+// AvailabilityDetails детальная информация о состоянии и причинах недоступности статистики.
+message AvailabilityDetails {
+  // State состояние статистики
+  AvailabilityState state = 1;
+
+  // Details причина по которой статистика не доступна (возможно пустое).
+  string details = 2;
+}
+
+// Provider информация о провайдере статистики.
+message Provider {
+  // ProviderID идентификатор провайдера статистики для записи
+  string provider_id = 1 [(go.field) = {name: 'ProviderID'}];
+
+  // ProviderName название провайдера статистики для записи.
+  string provider_name = 2 [(go.field) = {name: 'ProviderName'}];
+
+  // Platform название платформы, на которой работает провайдер статистики
+  string platform = 3;
+
+  // AvailabilityDetails информация о доступности провайдера.
+  AvailabilityDetails availability_details = 4;
+}
+
+// Record представляет собой запись статистики на указанную дату-время для произвольного провайдера статистики.
+message Record {
+  // Provider - провайдер, к которому относится запись статистики.
+  Provider provider = 1;
+
+  // RecordValue список значений. Провайдеры могут отдавать несколько значений за раз.
+  // Например, loadavg отдаёт три значения:
+  //   - ср.загрузка за 1мин
+  //   - ср.загрузка за 5мин
+  //   - ср.загрузка за 15мин
+  repeated RecordValue value = 2;
+
+  // Time время соотвестствующее записи статистики.
+  google.protobuf.Timestamp time = 3;
+}
+
+// RecordValue представляет собой значение соответствующей записи.
+message RecordValue {
+  // ID идентификатор значения
+  string id = 1 [(go.field) = {name: 'ID'}];
+
+  // Name название значения
+  string name = 2;
+
+  // Value само значение
+  string value = 3;
+}

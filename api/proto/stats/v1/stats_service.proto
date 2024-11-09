@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package stats.v1;
+
+import "stats/v1/stats.proto";
+
+option go_package = "github.com/dima-study/monmon/pkg/api/proto/stats/v1";
+
+// StatsService сервис статистики.
+service StatsService {
+  // GetSupportedStats rpc метод для получения списка поддерживаемых провайдеров статистики.
+  rpc GetSupportedStats(GetSupportedStatsRequest) returns (GetSupportedStatsResponse);
+
+  // GetStats rpc метод для получения статистики по всем доступным провайдерам в потоковом режиме.
+  rpc GetStats(GetStatsRequest) returns (stream GetStatsResponse);
+}
+
+// GetSupportedStatsRequest запрос на получение поддерживаемых провайдеров статистики.
+message GetSupportedStatsRequest {}
+
+// GetSupportedStatsResponse ответ с данными о поддерживаемых провайдерах статистики.
+message GetSupportedStatsResponse {
+  // Provider информация о провайдере статистики.
+  repeated Provider providers = 1;
+}
+
+// GetStatsRequest запрос на получение статистики за период period каждые interval секунд.
+message GetStatsRequest {
+  // Interval интервал получения статистики.
+  int64 interval = 1;
+
+  // Period период, за который будет выдаваться статистика.
+  int64 period = 2;
+}
+
+// GetStatsResponse ответ с данными статистики.
+message GetStatsResponse {
+  // Record данные статистики.
+  Record record = 1;
+}
