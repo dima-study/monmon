@@ -143,10 +143,8 @@ func getStat(ctx context.Context, connect string, providerID string, interval in
 		resp, err := stream.Recv()
 
 		// err может быть вызван отменой контекста, првоеряем
-		select {
-		case <-ctx.Done():
+		if ctx.Err() != nil {
 			return
-		default:
 		}
 
 		if err != nil {
