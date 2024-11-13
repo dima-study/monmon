@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"os"
 	"strings"
 	"time"
 
@@ -117,14 +118,14 @@ func (sc *ServiceConfig) Validate() error {
 
 // ReadConfig пытается прочитать конфиг в yaml формате из файла и переменных окружения.
 func ReadConfig(path string) (Config, error) {
-	var cfg Config
-
-	if err := cleanenv.ReadConfig(path, &cfg); err != nil {
-		return Config{}, err
+	file, err := os.Open(path)
+	if err != nil {
+		return Config{}, fmt.Errorf("can't read file: %w", err)
 	}
 
-	if err := cfg.Validate(); err != nil {
-		return Config{}, err
+	cfg, err := ParseConfig(file)
+	if err != nil {
+		return Config{}, fmt.Errorf("can't parse config: %w", err)
 	}
 
 	return cfg, nil
